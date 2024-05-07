@@ -1,0 +1,61 @@
+version: "3.8"
+services:
+  backend:
+    container_name: livros_backend
+    build:
+      context: ./webacademy-livros-backend
+    ports:
+      - 4444:4444
+    volumes:
+      - ./webacademy-livros-backend/log:/app/log 
+    env_file: ./webacademy-livros-backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - livros_service_net
+
+  frontend:
+    container_name: livros_frontend
+    build:
+      context: ./webacademy-livros-frontend
+    ports:
+      - 8000:80
+    env_file: ./webacademy-livros-frontend/.env
+    networks:
+      - livros_service_net
+
+  db:
+    image: mysql:latest
+    container_name: livros_db
+    ports:
+      - 3306:3306
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 1m
+      timeout: 20s
+      retries: 5
+      start_period: 20s
+    env_file: ./.env
+    volumes:
+      - mysql_db:/var/lib/mysql
+    networks:
+      - livros_service_net
+  
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: livros_phpmyadmin
+    env_file: ./.env
+    depends_on:
+      - db
+    ports:
+      - 8080:80
+    networks:
+      - livros_service_net
+
+volumes:
+  mysql_db:
+
+networks:
+  livros_service_net:
+    driver: bridge
